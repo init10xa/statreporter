@@ -9,10 +9,10 @@ namespace StatReporter.Scraping
 {
     public class HtmlScraper
     {
+        private readonly string DateStringNodeXOath = "./div/div/span[@class='im_message_date_split_text']";
         private readonly string HistoryMessageItemDivClass = "im_history_message_wrap";
         private readonly string HistoryMessageItemDivXPath = "/html/body/div/div/div/div/div/div/div/div/div/div/div/div/div[@my-message]";
         private readonly string MessageAuthorNodeXPath = "./div/div/div/div/span/a[contains(@class,'im_message_author')]";
-        private readonly string MessageBodyItemDivAttribName = "my-message-body";
         private readonly string MessageBodyItemDivXPath = "./div/div/div/div/div[@my-message-body='historyMessage']";
         private readonly string MessageTimeNodeXPath = "./div/div/div/div/span/span/span[@ng-bind='::historyMessage.date | time']";
         private DateTime currentDate;
@@ -149,6 +149,10 @@ namespace StatReporter.Scraping
         {
             var metaData = new MessageMetaData();
 
+            string date;
+            if (TryExtractDate(msg, out date))
+                UpdateCurrentDate(date);
+
             var messageTime = ExtractMessageTime(msg);
             metaData.Timestamp = CreateFullDate(currentDate, messageTime);
             string messageAuthor = ExtractMessageAuthor(msg);
@@ -184,6 +188,45 @@ namespace StatReporter.Scraping
 
             logger.Debug("The node is a user message");
             return true;
+        }
+
+        private bool TryExtractDate(HtmlNode msg, out string date)
+        {
+            bool hasExtracted = false;
+            date = null;
+
+            var dateNode = msg.SelectSingleNode(DateStringNodeXOath);
+
+            if (dateNode != null)
+            {
+                date = dateNode.InnerText;
+                hasExtracted = true;
+            }
+
+            return hasExtracted;
+        }
+
+        private void UpdateCurrentDate(string dateString)
+        {
+            bool isNullOrEmpty = string.IsNullOrWhiteSpace(dateString);
+            Debug.Assert(!isNullOrEmpty, "!isNullOrEmpty - date is not expected to be null or empty.");
+            if (isNullOrEmpty)
+            {
+                logger.Error("The date string found is null/empty.");
+                return;
+            }
+
+            DateTime date;
+            bool isParsed = DateTime.TryParse(dateString, out date);
+
+            Debug.Assert(isParsed, $"isParsed - the date string givend ('{dateString}') is expected to be well-formed.");
+            if (!isParsed)
+            {
+                logger.Error($"The date string ('{dateString}') could not be parsed.");
+                return;
+            }
+
+            currentDate = date.Date;
         }
     }
 }
