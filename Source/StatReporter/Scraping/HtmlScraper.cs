@@ -84,6 +84,10 @@ namespace StatReporter.Scraping
 
             foreach (var msgNode in historyMessages)
             {
+                string date;
+                if (TryExtractDate(msgNode, out date))
+                    UpdateCurrentDate(date);
+
                 isMessageProcessed = false;
                 if (IsUserMessage(msgNode))
                 {
@@ -220,10 +224,6 @@ namespace StatReporter.Scraping
         private MessageMetaData GetMessageMetaData(HtmlNode messageNode)
         {
             var metaData = new MessageMetaData();
-
-            string date;
-            if (TryExtractDate(messageNode, out date))
-                UpdateCurrentDate(date);
 
             var messageTime = ExtractMessageTime(messageNode);
             metaData.Timestamp = CreateFullDate(currentDate, messageTime);
