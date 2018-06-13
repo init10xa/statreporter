@@ -9,7 +9,11 @@ namespace StatReporter.Scraping
 {
     public class HtmlScraper
     {
+        private readonly string ActivityMessageNodeXPath = "./div/div/div/div[@class='im_service_message']";
+        private readonly string AddedOrDeletedUserNodeXPath = "./div/div/div/div/span/span/span/my-i18n-param/a[@my-peer-link='historyMessage.action.user_id']";
+        private readonly string CreateChatActivityMessageXPath = "./div/div/div/div/span/span/my-i18n/span";
         private readonly string DateStringNodeXOath = "./div/div/span[@class='im_message_date_split_text']";
+        private readonly string GenericActivityMessageNodeXPath = "./div/div/div/div/span/span/span";
         private readonly string HistoryMessageItemDivClass = "im_history_message_wrap";
         private readonly string HistoryMessageItemDivXPath = "/html/body/div/div/div/div/div/div/div/div/div/div/div/div/div[@my-message]";
         private readonly string MessageAuthorNodeXPath = "./div/div/div/div/span/a[contains(@class,'im_message_author')]";
@@ -53,16 +57,16 @@ namespace StatReporter.Scraping
                 this.users.Add(user.Name, user);
         }
 
-        private string ExtractMessageAuthor(HtmlNode msg)
+        private string ExtractMessageAuthor(HtmlNode messageNode)
         {
-            var messageAuthorNode = msg.SelectSingleNode(MessageAuthorNodeXPath);
+            var messageAuthorNode = messageNode.SelectSingleNode(MessageAuthorNodeXPath);
 
             Debug.Assert(messageAuthorNode != null,
                         $"messageAuthorNode != null - message's author node expected to be found at the following path: '{MessageTimeNodeXPath}'.");
             if (messageAuthorNode == null)
             {
                 logger.Error($"Could not find message's author node for the current node at the following path: '{MessageTimeNodeXPath}'. " +
-                             $"Here is the current node: {Environment.NewLine}{msg.OuterHtml}");
+                             $"Here is the current node: {Environment.NewLine}{messageNode.OuterHtml}");
                 return string.Empty;
             }
 
@@ -78,15 +82,23 @@ namespace StatReporter.Scraping
             bool isMessageProcessed;
             var messages = new List<MessageMetaData>();
 
-            foreach (var msg in historyMessages)
+            foreach (var msgNode in historyMessages)
             {
                 isMessageProcessed = false;
-                if (IsUserMessage(msg))
+                if (IsUserMessage(msgNode))
                 {
-                    MessageMetaData metaData = GetMessageMetaData(msg);
+                    MessageMetaData metaData = GetMessageMetaData(msgNode);
                     messages.Add(metaData);
                     isMessageProcessed = true;
                 }
+                else if (IsActivityMessage(msgNode))
+                {
+                    ProcessActionMessage(msgNode);
+                    isMessageProcessed = true;
+                }
+
+                Debug.Assert(isMessageProcessed, "The msg is expected to match either a 'user message'" +
+                             " or a 'notification message' and be processed already.");
             }
 
             return messages.ToArray();
@@ -118,6 +130,66 @@ namespace StatReporter.Scraping
             return messageTime;
         }
 
+        private ActionType GetAction(HtmlNode messageNode)
+        {
+            var actionNode = messageNode.SelectSingleNode(GenericActivityMessageNodeXPath);
+
+            if (actionNode == null)
+                actionNode = messageNode.SelectSingleNode(CreateChatActivityMessageXPath);
+
+            Debug.Assert(actionNode != null, "actionNode != null - action node expected to exist.");
+            if (actionNode == null)
+            {
+                logger.Error($"Could not find an action node at the expected path in: {Environment.NewLine}{messageNode.OuterHtml}");
+                return ActionType.None;
+            }
+
+            string actionString = actionNode.Attributes["ng-switch-when"].Value;
+
+            Debug.Assert(!string.IsNullOrWhiteSpace(actionString),
+                        "!string.IsNullOrWhiteSpace(action) - action expected to exist.");
+            if (string.IsNullOrWhiteSpace(actionString))
+            {
+                logger.Error($"Could not find an action on the action node for in: {Environment.NewLine}{messageNode.OuterHtml}");
+                return ActionType.None;
+            }
+
+            ActionType action = ActionTypeConverter.GetActionType(actionString);
+
+            Debug.Assert(action != ActionType.None, "action != ActionType.None - action string expected to be valid.");
+            if (action == ActionType.None)
+            {
+                logger.Error($"Could not convert action string ('{actionString}') to a valid ActionType.");
+                return ActionType.None;
+            }
+
+            return action;
+        }
+
+        private string GetAddedDeletedUserName(HtmlNode messageNode)
+        {
+            var userNode = messageNode.SelectSingleNode(AddedOrDeletedUserNodeXPath);
+
+            Debug.Assert(userNode != null,
+                        "userNode != null - user's name node is expected to exist.");
+            if (userNode == null)
+            {
+                logger.Error($"Could not find the node containing user's name in message node: {Environment.NewLine}{messageNode.OuterHtml}");
+                return string.Empty;
+            }
+
+            string userName = userNode.InnerText;
+
+            Debug.Assert(!string.IsNullOrWhiteSpace(userName), "!string.IsNullOrWhiteSpace(userName) - user's name is expected to be non-empty.");
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                logger.Error($"User's name is empty/null in the node: {Environment.NewLine}{messageNode.OuterHtml}");
+                return string.Empty;
+            }
+
+            return userName;
+        }
+
         private HtmlNode[] GetHistoryMessageItems()
         {
             Debug.Assert(doc != null, "doc != null - doc cannot be null at this point.");
@@ -145,33 +217,58 @@ namespace StatReporter.Scraping
             return historyItemNodes.ToArray();
         }
 
-        private MessageMetaData GetMessageMetaData(HtmlNode msg)
+        private MessageMetaData GetMessageMetaData(HtmlNode messageNode)
         {
             var metaData = new MessageMetaData();
 
             string date;
-            if (TryExtractDate(msg, out date))
+            if (TryExtractDate(messageNode, out date))
                 UpdateCurrentDate(date);
 
-            var messageTime = ExtractMessageTime(msg);
+            var messageTime = ExtractMessageTime(messageNode);
             metaData.Timestamp = CreateFullDate(currentDate, messageTime);
-            string messageAuthor = ExtractMessageAuthor(msg);
+            string messageAuthor = ExtractMessageAuthor(messageNode);
             metaData.Sender = GetUser(messageAuthor);
 
             return metaData;
         }
 
-        private User GetUser(string messageAuthor)
+        private User GetUser(string name)
         {
             User user;
 
-            if (!users.TryGetValue(messageAuthor, out user))
+            Debug.Assert(!string.IsNullOrWhiteSpace(name),
+                        "!string.IsNullOrWhiteSpace(name) - given name is expected to be non-empty.");
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                string message = "Received an empty/null user name to look up in the list.";
+                logger.Error(message);
+                throw new InvalidOperationException(message);
+            }
+
+            if (!users.TryGetValue(name, out user))
             {
                 user = new User();
-                user.Name = messageAuthor;
+                user.Name = name;
             }
 
             return user;
+        }
+
+        private bool IsActivityMessage(HtmlNode messageNode)
+        {
+            logger.Debug($"Checking if the node is an activity message... {Environment.NewLine}{messageNode.OuterHtml}");
+
+            var activityMessageNode = messageNode.SelectSingleNode(ActivityMessageNodeXPath);
+
+            if (activityMessageNode == null)
+            {
+                logger.Debug("The node is not an activity message.");
+                return false;
+            }
+
+            logger.Debug("The node is an activity message.");
+            return true;
         }
 
         private bool IsUserMessage(HtmlNode messageNode)
@@ -188,6 +285,53 @@ namespace StatReporter.Scraping
 
             logger.Debug("The node is a user message");
             return true;
+        }
+
+        private void ProcessActionMessage(HtmlNode messageNode)
+        {
+            ActionType action = GetAction(messageNode);
+
+            switch (action)
+            {
+                case ActionType.CreateChat:
+                    // nothing to process
+                    return;
+
+                case ActionType.AddUser:
+                    ProcessUserAddedMessage(messageNode);
+                    return;
+
+                case ActionType.DeleteUser:
+                    ProcessUserDeletedMessage(messageNode);
+                    return;
+
+                case ActionType.LeaveChat:
+                    ProcessUserLeftMessage(messageNode);
+                    return;
+            }
+
+            logger.Error($"Received an invalid activity message of type {action} which could not be processed.");
+        }
+
+        private void ProcessUserAddedMessage(HtmlNode messageNode)
+        {
+            string userName = GetAddedDeletedUserName(messageNode);
+            var user = GetUser(userName);
+            user.AddAJoinDate(currentDate);
+        }
+
+        private void ProcessUserDeletedMessage(HtmlNode messageNode)
+        {
+            string userName = GetAddedDeletedUserName(messageNode);
+            var user = GetUser(userName);
+            user.AddLeftDate(currentDate);
+        }
+
+        private void ProcessUserLeftMessage(HtmlNode messageNode)
+        {
+            var userName = ExtractMessageAuthor(messageNode);
+            var user = GetUser(userName);
+            user.AddLeftDate(currentDate);
         }
 
         private bool TryExtractDate(HtmlNode msg, out string date)
