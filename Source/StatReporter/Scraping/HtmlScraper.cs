@@ -308,6 +308,10 @@ namespace StatReporter.Scraping
                 case ActionType.LeaveChat:
                     ProcessUserLeftMessage(messageNode);
                     return;
+
+                case ActionType.PinnedMessage:
+                    // nothing to process for now
+                    return;
             }
 
             logger.Error($"Received an invalid activity message of type {action} which could not be processed.");

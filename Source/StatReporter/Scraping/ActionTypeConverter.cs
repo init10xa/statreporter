@@ -19,6 +19,9 @@ namespace StatReporter.Scraping
                 case "messageActionChatDeleteUser":
                     return ActionType.DeleteUser;
 
+                case "messageActionPinMessage":
+                    return ActionType.PinnedMessage;
+
                 default:
                     return ActionType.None;
             }
