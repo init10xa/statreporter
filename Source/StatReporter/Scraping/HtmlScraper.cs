@@ -14,8 +14,9 @@ namespace StatReporter.Scraping
         private readonly string CreateChatActivityMessageXPath = "./div/div/div/div/span/span/my-i18n/span";
         private readonly string DateStringNodeXOath = "./div/div/span[@class='im_message_date_split_text']";
         private readonly string GenericActivityMessageNodeXPath = "./div/div/div/div/span/span/span";
-        private readonly string HistoryMessageItemDivClass = "im_history_message_wrap";
-        private readonly string HistoryMessageItemDivXPath = "/html/body/div/div/div/div/div/div/div/div/div/div/div/div/div[@my-message]";
+        private readonly string HistoryMessageItemNodeClass = "im_history_message_wrap";
+        private readonly string HistoryMessageItemNodeXPath = "./div/div/div/div/div/div/div/div/div[@my-message]";
+        private readonly string HistoryMessagesColumnNodeXPath = "/html/body/div/div/div/div[contains(@class, 'im_history_col_wrap')]";
         private readonly string MessageAuthorNodeAlternateXPath = "./div/div/div/div/a[contains(@class, 'im_message_author')]";
         private readonly string MessageAuthorNodeXPath = "./div/div/div/div/span/a[contains(@class,'im_message_author')]";
         private readonly string MessageBodyItemDivXPath = "./div/div/div/div/div[@my-message-body='historyMessage']";
@@ -202,8 +203,17 @@ namespace StatReporter.Scraping
         {
             Debug.Assert(doc != null, "doc != null - doc cannot be null at this point.");
 
+            var historyMessagesColumn = doc.DocumentNode.SelectSingleNode(HistoryMessagesColumnNodeXPath);
+
+            Debug.Assert(historyMessagesColumn != null, "historyMessagesColumn != null - history messages column expected to exit.");
+            if (historyMessagesColumn == null)
+            {
+                logger.Error("Cound not find the history messages column in the document.");
+                return new HtmlNode[0];
+            }
+
             var historyItemNodes = new List<HtmlNode>();
-            var nodes = doc.DocumentNode.SelectNodes(HistoryMessageItemDivXPath);
+            var nodes = historyMessagesColumn.SelectNodes(HistoryMessageItemNodeXPath);
 
             foreach (var node in nodes)
             {
@@ -211,7 +221,7 @@ namespace StatReporter.Scraping
                 Debug.Assert(!string.IsNullOrWhiteSpace(nodeClassAttrib),
                              "!string.IsNullOrWhiteSpace(nodeClassAttrib) - the node is expected to have class attribute");
 
-                if (nodeClassAttrib.Contains(HistoryMessageItemDivClass))
+                if (nodeClassAttrib.Contains(HistoryMessageItemNodeClass))
                 {
                     logger.Debug($"found a history message item. {Environment.NewLine} {node.InnerHtml}");
                     historyItemNodes.Add(node);
