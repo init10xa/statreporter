@@ -316,6 +316,10 @@ namespace StatReporter.Scraping
                 case ActionType.PinnedMessage:
                     // nothing to process for now
                     return;
+
+                case ActionType.UpgradedToSupergroup:
+                    // nothing to process for now
+                    return;
             }
 
             logger.Error($"Received an invalid activity message of type {action} which could not be processed.");

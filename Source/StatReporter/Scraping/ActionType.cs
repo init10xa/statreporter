@@ -8,6 +8,7 @@ namespace StatReporter.Scraping
         LeaveChat,
         AddUser,
         DeleteUser,
-        PinnedMessage
+        PinnedMessage,
+        UpgradedToSupergroup
     }
 }
