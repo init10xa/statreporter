@@ -16,6 +16,7 @@ namespace StatReporter.Scraping
         private readonly string GenericActivityMessageNodeXPath = "./div/div/div/div/span/span/span";
         private readonly string HistoryMessageItemDivClass = "im_history_message_wrap";
         private readonly string HistoryMessageItemDivXPath = "/html/body/div/div/div/div/div/div/div/div/div/div/div/div/div[@my-message]";
+        private readonly string MessageAuthorNodeAlternateXPath = "./div/div/div/div/a[contains(@class, 'im_message_author')]";
         private readonly string MessageAuthorNodeXPath = "./div/div/div/div/span/a[contains(@class,'im_message_author')]";
         private readonly string MessageBodyItemDivXPath = "./div/div/div/div/div[@my-message-body='historyMessage']";
         private readonly string MessageTimeNodeXPath = "./div/div/div/div/span/span/span[@ng-bind='::historyMessage.date | time']";
@@ -60,6 +61,9 @@ namespace StatReporter.Scraping
         private string ExtractMessageAuthor(HtmlNode messageNode)
         {
             var messageAuthorNode = messageNode.SelectSingleNode(MessageAuthorNodeXPath);
+
+            if (messageAuthorNode == null)
+                messageAuthorNode = messageNode.SelectSingleNode(MessageAuthorNodeAlternateXPath);
 
             Debug.Assert(messageAuthorNode != null,
                         $"messageAuthorNode != null - message's author node expected to be found at the following path: '{MessageAuthorNodeXPath}'.");
