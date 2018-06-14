@@ -62,10 +62,10 @@ namespace StatReporter.Scraping
             var messageAuthorNode = messageNode.SelectSingleNode(MessageAuthorNodeXPath);
 
             Debug.Assert(messageAuthorNode != null,
-                        $"messageAuthorNode != null - message's author node expected to be found at the following path: '{MessageTimeNodeXPath}'.");
+                        $"messageAuthorNode != null - message's author node expected to be found at the following path: '{MessageAuthorNodeXPath}'.");
             if (messageAuthorNode == null)
             {
-                logger.Error($"Could not find message's author node for the current node at the following path: '{MessageTimeNodeXPath}'. " +
+                logger.Error($"Could not find message's author node for the current node at the following path: '{MessageAuthorNodeXPath}'. " +
                              $"Here is the current node: {Environment.NewLine}{messageNode.OuterHtml}");
                 return string.Empty;
             }
