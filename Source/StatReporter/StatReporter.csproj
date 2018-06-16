@@ -69,6 +69,8 @@
     <Compile Include="Scraping\ActionTypeConverter.cs" />
     <Compile Include="Scraping\HtmlScraper.cs" />
     <Compile Include="Scraping\IHtmlScraper.cs" />
+    <Compile Include="Core\IProgressable.cs" />
+    <Compile Include="Core\ProgressEventArgs.cs" />
     <Compile Include="Types\MessageMetaData.cs" />
     <Compile Include="Types\User.cs" />
   </ItemGroup>
