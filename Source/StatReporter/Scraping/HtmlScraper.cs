@@ -4,11 +4,17 @@ using StatReporter.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using StatReporter.Core;
 
 namespace StatReporter.Scraping
 {
-    public class HtmlScraper
+    public class HtmlScraper : IHtmlScraper
     {
+        private static readonly float Epsilon = 0.00001f;
+        private static readonly float ExtractMetadataProgressFactor = 0.5f;
+        private static readonly float FullProgress = 1f;
+        private static readonly float GetMessageItemsProgressFactor = 0.5f;
+        private static readonly float OneUnitOfProgress = 0.01f;
         private readonly string ActivityMessageNodeXPath = "./div/div/div/div[@class='im_service_message']";
         private readonly string AddedOrDeletedUserNodeXPath = "./div/div/div/div/span/span/span/my-i18n-param/a[@my-peer-link='historyMessage.action.user_id']";
         private readonly string CreateChatActivityMessageXPath = "./div/div/div/div/span/span/my-i18n/span";
@@ -24,7 +30,13 @@ namespace StatReporter.Scraping
         private DateTime currentDate;
         private HtmlDocument doc;
         private ILogger logger;
+        private float previousTotalProgress;
+        private float totalProgress;
         private Dictionary<string, User> users;
+
+        public event EventHandler Completed;
+
+        public event EventHandler<ProgressEventArgs> ProgressChanged;
 
         public HtmlScraper(ILogger logger, HtmlDocument htmlDoc, IEnumerable<User> users = null)
         {
@@ -36,11 +48,45 @@ namespace StatReporter.Scraping
 
         public MessageMetaData[] Scrape()
         {
+            totalProgress = 0;
+            previousTotalProgress = 0;
+
             var historyMessages = GetHistoryMessageItems();
 
             var messages = ExtractMessages(historyMessages);
 
             return messages;
+        }
+
+        protected bool IsProgressCompleted()
+        {
+            return Math.Abs(FullProgress - totalProgress) <= Epsilon;
+        }
+
+        protected virtual void RaiseProgressChanged(string message = null)
+        {
+            // avoid raising progress changed too many times
+            if (!ShouldPropagateProgress() && !IsProgressCompleted())
+                return;
+
+            float progressInPercent = totalProgress * 100;
+
+            ProgressChanged?.Invoke(this, new ProgressEventArgs(progressInPercent, message));
+
+            if (IsProgressCompleted())
+                Completed?.Invoke(this, new EventArgs());
+
+            previousTotalProgress = totalProgress;
+        }
+
+        protected bool ShouldPropagateProgress()
+        {
+            float progressDelta = totalProgress - previousTotalProgress;
+
+            if (progressDelta >= OneUnitOfProgress)
+                return true;
+
+            return false;
         }
 
         private DateTime CreateFullDate(DateTime date, DateTime time)
@@ -86,6 +132,9 @@ namespace StatReporter.Scraping
         {
             bool isMessageProcessed;
             var messages = new List<MessageMetaData>();
+            int totalNodes = historyMessages.Length;
+            int nodesCompleted = 0;
+            float progressStep = (1f / totalNodes) * ExtractMetadataProgressFactor;
 
             foreach (var msgNode in historyMessages)
             {
@@ -108,6 +157,10 @@ namespace StatReporter.Scraping
 
                 Debug.Assert(isMessageProcessed, "The msg is expected to match either a 'user message'" +
                              " or a 'notification message' and be processed already.");
+
+                nodesCompleted++;
+                totalProgress += progressStep;
+                RaiseProgressChanged($"Processing messages: {nodesCompleted} / {totalNodes}");
             }
 
             return messages.ToArray();
@@ -215,6 +268,10 @@ namespace StatReporter.Scraping
             var historyItemNodes = new List<HtmlNode>();
             var nodes = historyMessagesColumn.SelectNodes(HistoryMessageItemNodeXPath);
 
+            int totalNodes = nodes.Count;
+            int nodesCompleted = 0;
+            float progressStep = (1f / totalNodes) * GetMessageItemsProgressFactor;
+
             foreach (var node in nodes)
             {
                 var nodeClassAttrib = node.Attributes["class"].Value;
@@ -226,6 +283,10 @@ namespace StatReporter.Scraping
                     logger.Debug($"found a history message item. {Environment.NewLine} {node.InnerHtml}");
                     historyItemNodes.Add(node);
                 }
+
+                nodesCompleted++;
+                totalProgress += progressStep;
+                RaiseProgressChanged($"Processing nodes: {nodesCompleted} / {totalNodes}");
             }
 
             Debug.Assert(historyItemNodes.Count > 0,

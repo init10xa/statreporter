@@ -1,13 +1,20 @@
 ﻿using HtmlAgilityPack;
 using NLog;
+using StatReporter.Core;
 using StatReporter.Scraping;
 using System;
 using System.Diagnostics;
+using System.Text;
 
 namespace StatReporter
 {
     internal class Program
     {
+        private static readonly int NumberOfTotalBlocks = 20;
+        private static int BlockPercentage;
+        private static string EmptyBlockString = "-";
+        private static string FullBlockString = "#";
+
         private static void Main(string[] args)
         {
             Debug.Assert(args.Length > 0, "args.Length > 0 - at least one argument should be passed to the program.");
@@ -17,25 +24,58 @@ namespace StatReporter
                 return;
             }
 
-            string fileName = args[0];
+            BlockPercentage = 100 / NumberOfTotalBlocks;
 
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.CursorVisible = false;
+
+            string fileName = args[0];
             HtmlDocument htmlDoc = new HtmlDocument();
             htmlDoc.Load(fileName);
 
-            //var nodes = htmlDoc.DocumentNode.CssSelect("div[class=im_message_text]");
-
-            //foreach (var node in nodes)
-            //    Console.WriteLine($"message is: {node.InnerText}");
-
             var logger = LogManager.GetLogger(typeof(HtmlScraper).FullName);
             HtmlScraper scraper = new HtmlScraper(logger, htmlDoc);
+            scraper.ProgressChanged += OnProgressChanged;
             var result = scraper.Scrape();
 
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
             foreach (var item in result)
-                Console.WriteLine($"{item.Sender.Name} at {item.Timestamp}");
+                sb.AppendLine($"{item.Sender.Name} at {item.Timestamp}");
+
+            Console.WriteLine();
+            //Console.WriteLine(sb);
 
             Console.Write("Done!");
+            Console.CursorVisible = true;
             Console.ReadKey();
+        }
+
+        private static void OnProgressChanged(object sender, ProgressEventArgs e)
+        {
+            ShowProgress(e.Progress, e.Message);
+        }
+
+        private static void ShowProgress(float progress, string message)
+        {
+            Console.Clear();
+            Console.SetCursorPosition(0, 0);
+            Console.Write(message);
+            Console.SetCursorPosition(0, 1);
+            Console.Write($"{progress:F0}%");
+            Console.SetCursorPosition(6, 1);
+            int fullCellsCount = (int)(Math.Floor(progress) + 1) / BlockPercentage;
+            int emptyCellsCount = NumberOfTotalBlocks - fullCellsCount;
+
+            Console.Write("[");
+
+            for (int i = 0; i < fullCellsCount; i++)
+                Console.Write(FullBlockString);
+
+            for (int i = 0; i < emptyCellsCount; i++)
+                Console.Write(EmptyBlockString);
+
+            Console.Write("]");
         }
     }
 }
