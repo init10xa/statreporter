@@ -1,4 +1,5 @@
 ﻿using StatReporter.Types;
+using System.Threading.Tasks;
 
 namespace StatReporter.Reporting
 {
@@ -6,8 +7,8 @@ namespace StatReporter.Reporting
     {
         string ReportName { get; }
 
-        MessageMetaData[] Messages { get; set; }
+        MessageMetaData[] Messages { get; }
 
-        Report Generate();
+        Task<Report> GenerateAsync();
     }
 }

@@ -5,10 +5,8 @@ namespace StatReporter.Reporting.Formatter
     {
         ContentType ContentType { get; }
 
-        string ContentFileExtension { get; }
+        void AddRecord(params string[] items);
 
-        void AddToContent(params object[] items);
-
-        object GetFormattedContent();
+        string GetFormattedContent();
     }
 }

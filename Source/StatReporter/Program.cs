@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using NLog;
 using StatReporter.Core;
+using StatReporter.Reporting;
 using StatReporter.Scraping;
 using System;
 using System.Diagnostics;
@@ -36,12 +37,13 @@ namespace StatReporter
             var logger = LogManager.GetLogger(typeof(HtmlScraper).FullName);
             HtmlScraper scraper = new HtmlScraper(logger, htmlDoc);
             scraper.ProgressChanged += OnProgressChanged;
-            var result = scraper.Scrape();
+            var messages = scraper.Scrape();
 
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            IReportGenerator rg = new NumberOfMessagesByEachUserReport(messages);
+            var report = rg.GenerateAsync().Result;
 
-            foreach (var item in result)
-                sb.AppendLine($"{item.Sender.Name} at {item.Timestamp}");
+            foreach (var item in report.Content)
+                Console.WriteLine($"{item[0]}\t: {item[1]}");
 
             Console.WriteLine();
             //Console.WriteLine(sb);
