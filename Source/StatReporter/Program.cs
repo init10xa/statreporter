@@ -40,7 +40,7 @@ namespace StatReporter
             scraper.ProgressChanged += OnProgressChanged;
             var messages = scraper.Scrape();
 
-            IReportGenerator rg = new NumberOfMessagesByEachUserReport(messages);
+            IReportGenerator rg = new UserContributionByMonthReport(messages, "TestUser");
             var report = rg.GenerateAsync().Result;
 
             foreach (var section in report.Sections)
@@ -81,7 +81,7 @@ namespace StatReporter
             for (int i = 0; i < emptyCellsCount; i++)
                 Console.Write(EmptyBlockString);
 
-            Console.Write("]");
+            Console.WriteLine("]");
         }
     }
 }

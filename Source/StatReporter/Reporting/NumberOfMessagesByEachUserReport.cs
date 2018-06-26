@@ -6,14 +6,8 @@ namespace StatReporter.Reporting
 {
     public class NumberOfMessagesByEachUserReport : ReportGeneratorBase
     {
-        private static readonly string SinceCreation = "Since chat started";
-
-        private static readonly string ToDate = "To date";
-
         private List<string[]> countingResult;
-
         private List<string[]> usersInfo;
-
         private Dictionary<string, ReportItem> usersMessages;
 
         public NumberOfMessagesByEachUserReport(MessageMetaData[] messages) : base(messages)
@@ -86,34 +80,16 @@ namespace StatReporter.Reporting
         private void PrepareUsersInfo()
         {
             usersInfo = new List<string[]>();
+            IEnumerable<string[]> info;
             User user;
-            string userName;
-            string joinedDate;
-            string leftDate;
 
             foreach (var record in usersMessages)
             {
                 user = record.Value.User;
+                info = user.GetFormattedUserInfo();
 
-                for (int i = 0; i < user.JoinedDates.Length; i++)
-                {
-                    if (user.JoinedDates[i] == DateTime.MinValue)
-                        joinedDate = SinceCreation;
-                    else
-                        joinedDate = user.JoinedDates[0].ToShortDateString();
-
-                    if (user.LeftDates[i] == DateTime.MaxValue)
-                        leftDate = ToDate;
-                    else
-                        leftDate = user.LeftDates[i].ToShortDateString();
-
-                    if (i == 0)
-                        userName = user.Name;
-                    else
-                        userName = string.Empty;
-
-                    usersInfo.Add(new string[] { userName, joinedDate, leftDate });
-                }
+                foreach (var item in info)
+                    usersInfo.Add(item);
             }
         }
 

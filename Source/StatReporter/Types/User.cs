@@ -5,6 +5,8 @@ namespace StatReporter.Types
 {
     public class User
     {
+        private static readonly string SinceCreation = "Since chat started";
+        private static readonly string ToDate = "To date";
         private List<DateTime> joinedDates;
         private List<DateTime> leftDates;
 
@@ -44,6 +46,36 @@ namespace StatReporter.Types
         {
             int lastValidIndex = joinedDates.Count - 1;
             leftDates[lastValidIndex] = leftOn;
+        }
+
+        public IEnumerable<string[]> GetFormattedUserInfo()
+        {
+            var userInfo = new List<string[]>();
+            string userName;
+            string joinedDate;
+            string leftDate;
+
+            for (int i = 0; i < joinedDates.Count; i++)
+            {
+                if (joinedDates[i] == DateTime.MinValue)
+                    joinedDate = SinceCreation;
+                else
+                    joinedDate = joinedDates[0].ToShortDateString();
+
+                if (leftDates[i] == DateTime.MaxValue)
+                    leftDate = ToDate;
+                else
+                    leftDate = leftDates[i].ToShortDateString();
+
+                if (i == 0)
+                    userName = Name;
+                else
+                    userName = string.Empty;
+
+                userInfo.Add(new string[] { userName, joinedDate, leftDate });
+            }
+
+            return userInfo;
         }
     }
 }
