@@ -4,6 +4,7 @@ using StatReporter.Core;
 using StatReporter.Reporting;
 using StatReporter.Scraping;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -42,8 +43,11 @@ namespace StatReporter
             IReportGenerator rg = new NumberOfMessagesByEachUserReport(messages);
             var report = rg.GenerateAsync().Result;
 
-            foreach (var item in report.Content)
-                Console.WriteLine($"{item[0]}\t: {item[1]}");
+            foreach (var section in report.Sections)
+            {
+                foreach (var item in section.Content)
+                    Console.WriteLine($"{item[0]}\t: {item[1]}");
+            }
 
             Console.WriteLine();
             //Console.WriteLine(sb);

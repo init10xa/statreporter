@@ -1,13 +1,32 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace StatReporter.Reporting
 {
     public class Report
     {
-        public IEnumerable<string[]> Content { get; set; }
+        protected List<ReportSection> sections;
 
-        public ContentType ContentType { get; set; }
+        public Report()
+        {
+            sections = new List<ReportSection>();
+        }
+
+        public IEnumerable<ReportSection> Sections
+        {
+            get { return sections; }
+        }
 
         public string Title { get; set; }
+
+        public void AddSection(ReportSection section)
+        {
+            Debug.Assert(section != null, "section != null - section should not be null");
+            if (section == null)
+                throw new ArgumentNullException("section cannot be null.");
+
+            sections.Add(section);
+        }
     }
 }

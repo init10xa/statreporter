@@ -8,7 +8,12 @@ namespace StatReporter.Types
         private List<DateTime> joinedDates;
         private List<DateTime> leftDates;
 
-        public string Name { get; set; }
+        public User()
+        {
+            joinedDates = new List<DateTime>();
+            leftDates = new List<DateTime>();
+            AddAJoinDate(DateTime.MinValue);
+        }
 
         public DateTime[] JoinedDates
         {
@@ -20,20 +25,25 @@ namespace StatReporter.Types
             get { return leftDates.ToArray(); }
         }
 
+        public string Name { get; set; }
+
         public void AddAJoinDate(DateTime joinedOn)
         {
-            if (joinedDates == null)
-                joinedDates = new List<DateTime>();
-
-            joinedDates.Add(joinedOn);
+            if (joinedDates.Count == 1 && joinedDates[0] == DateTime.MinValue)
+            {
+                joinedDates[0] = joinedOn;
+            }
+            else
+            {
+                joinedDates.Add(joinedOn);
+                leftDates.Add(DateTime.MaxValue);
+            }
         }
 
         public void AddLeftDate(DateTime leftOn)
         {
-            if (leftDates == null)
-                leftDates = new List<DateTime>();
-
-            leftDates.Add(leftOn);
+            int lastValidIndex = joinedDates.Count - 1;
+            leftDates[lastValidIndex] = leftOn;
         }
     }
 }
