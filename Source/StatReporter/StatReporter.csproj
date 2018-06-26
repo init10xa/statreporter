@@ -63,6 +63,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Reporting\AllContributionsByMonthReport.cs" />
+    <Compile Include="Reporting\ContributionsByMonthBase.cs" />
     <Compile Include="Reporting\Formatter\DelimiterType.cs" />
     <Compile Include="Reporting\ReportGeneratorBase.cs" />
     <Compile Include="Reporting\ContentType.cs" />

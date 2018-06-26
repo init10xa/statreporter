@@ -6,18 +6,13 @@ using System.Globalization;
 
 namespace StatReporter.Reporting
 {
-    public class UserContributionByMonthReport : ReportGeneratorBase
+    public class UserContributionByMonthReport : ContributionsByMonthBase
     {
-        private static readonly char Delimiter = '/';
-        private Dictionary<string, int> contrinutions;
-        private List<string[]> reportContent;
         private User user;
         private string userName;
 
         public UserContributionByMonthReport(MessageMetaData[] messages, string userName) : base(messages)
         {
-            contrinutions = new Dictionary<string, int>();
-
             Debug.Assert(!string.IsNullOrWhiteSpace(userName),
                 "!string.IsNullOrWhiteSpace(userName) - user name expected to be non-empty.");
             if (string.IsNullOrWhiteSpace(userName))
@@ -26,24 +21,7 @@ namespace StatReporter.Reporting
             this.userName = userName;
         }
 
-        protected override Report Generate()
-        {
-            CountMessages();
-            var mainSection = CreateMainSection();
-            var userInfoSection = CreateUserInfoSection();
-
-            var report = new Report
-            {
-                Title = "UserContributionByMonth"
-            };
-
-            report.AddSection(mainSection);
-            report.AddSection(userInfoSection);
-
-            return report;
-        }
-
-        private void CountMessages()
+        protected override void CountMessages()
         {
             int messagesCount = messages.Length;
             string key = null;
@@ -72,33 +50,21 @@ namespace StatReporter.Reporting
             }
         }
 
-        private string CreateKey(DateTime date)
+        protected override Report Generate()
         {
-            return $"{date.Year}{Delimiter}{date.Month}";
-        }
+            CountMessages();
+            var mainSection = CreateMainSection();
+            var userInfoSection = CreateUserInfoSection();
 
-        private ReportSection CreateMainSection()
-        {
-            reportContent = new List<string[]>();
-            string[] dateComponents;
-            int month;
-            int year;
-            string monthName;
-            string date;
-
-            foreach (var record in contrinutions)
+            var report = new Report
             {
-                date = GetFormattedDate(record.Key);
-                reportContent.Add(new string[] { date, record.Value.ToString() });
-            }
-
-            var mainSection = new ReportSection()
-            {
-                Headings = new string[] { "Month", "Number of Messages" },
-                Content = reportContent
+                Title = "UserContributionByMonth"
             };
 
-            return mainSection;
+            report.AddSection(mainSection);
+            report.AddSection(userInfoSection);
+
+            return report;
         }
 
         private ReportSection CreateUserInfoSection()
@@ -115,18 +81,6 @@ namespace StatReporter.Reporting
                 Headings = new string[] { "User's Name", "Number of Messages" },
                 Content = info
             };
-        }
-
-        private string GetFormattedDate(string key)
-        {
-            var dateComponents = key.Split(Delimiter);
-            var year = Convert.ToInt32(dateComponents[0]);
-            var month = Convert.ToInt32(dateComponents[1]);
-            var dummyDate = new DateTime(year, month, 1);
-            var monthName = dummyDate.ToString("MMM.", CultureInfo.InvariantCulture);
-            var formattedDate = $"{monthName} {year}";
-
-            return formattedDate;
         }
     }
 }
