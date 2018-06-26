@@ -5,31 +5,23 @@ using System.Globalization;
 
 namespace StatReporter.Reporting
 {
-    public abstract class ContributionsByMonthBase : ReportGeneratorBase
+    public abstract class ContributionsByMonthBase : ContributionsBase
     {
         protected static readonly char Delimiter = '/';
-        protected Dictionary<string, int> contrinutions;
-        protected List<string[]> reportContent;
 
         public ContributionsByMonthBase(MessageMetaData[] messages) : base(messages)
         {
             contrinutions = new Dictionary<string, int>();
         }
 
-        protected abstract void CountMessages();
-
-        protected string CreateKey(DateTime date)
+        protected override string CreateKey(DateTime date)
         {
             return $"{date.Year}{Delimiter}{date.Month}";
         }
 
-        protected ReportSection CreateMainSection()
+        protected override ReportSection CreateMainSection()
         {
             reportContent = new List<string[]>();
-            string[] dateComponents;
-            int month;
-            int year;
-            string monthName;
             string date;
 
             foreach (var record in contrinutions)
