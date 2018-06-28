@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace StatReporter.Reporting
 {
@@ -23,7 +24,9 @@ namespace StatReporter.Reporting
         {
             string date;
 
-            foreach (var record in contrinutions)
+            var sortedContributions = contrinutions.OrderBy(record => record.Key);
+
+            foreach (var record in sortedContributions)
             {
                 date = GetFormattedDate(record.Key);
                 reportContent.Add(new string[] { date, record.Value.ToString() });
