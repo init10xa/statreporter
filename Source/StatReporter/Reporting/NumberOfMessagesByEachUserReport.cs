@@ -1,6 +1,7 @@
 ﻿using StatReporter.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace StatReporter.Reporting
 {
@@ -53,7 +54,9 @@ namespace StatReporter.Reporting
                     usersMessages.Add(userName, new ReportItem(user, 1));
             }
 
-            foreach (var record in usersMessages)
+            var sortedMessages = usersMessages.OrderBy(record => record.Key);
+
+            foreach (var record in sortedMessages)
                 countingResult.Add(new string[] { record.Key, record.Value.Counter.ToString() });
         }
 
@@ -62,7 +65,7 @@ namespace StatReporter.Reporting
             var section = new ReportSection()
             {
                 Headings = new string[] { "User's Name", "Number of Messages" },
-                Content = countingResult.ToArray()
+                Content = countingResult
             };
 
             return section;
