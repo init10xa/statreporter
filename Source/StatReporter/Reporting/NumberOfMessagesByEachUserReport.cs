@@ -8,6 +8,7 @@ namespace StatReporter.Reporting
     public class NumberOfMessagesByEachUserReport : ReportGeneratorBase
     {
         private List<string[]> countingResult;
+        private IOrderedEnumerable<KeyValuePair<string, ReportItem>> sortedResult;
         private List<string[]> usersInfo;
         private Dictionary<string, ReportItem> usersMessages;
 
@@ -54,9 +55,9 @@ namespace StatReporter.Reporting
                     usersMessages.Add(userName, new ReportItem(user, 1));
             }
 
-            var sortedMessages = usersMessages.OrderBy(record => record.Key);
+            sortedResult = usersMessages.OrderBy(record => record.Key);
 
-            foreach (var record in sortedMessages)
+            foreach (var record in sortedResult)
                 countingResult.Add(new string[] { record.Key, record.Value.Counter.ToString() });
         }
 
@@ -86,7 +87,7 @@ namespace StatReporter.Reporting
             IEnumerable<string[]> info;
             User user;
 
-            foreach (var record in usersMessages)
+            foreach (var record in sortedResult)
             {
                 user = record.Value.User;
                 info = user.GetFormattedUserInfo();
