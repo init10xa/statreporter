@@ -78,6 +78,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reporting\NumberOfMessagesByEachUserReport.cs" />
     <Compile Include="Reporting\Report.cs" />
+    <Compile Include="Reporting\UserContributionByHourReport.cs" />
     <Compile Include="Reporting\UserContributionByMonthReport.cs" />
     <Compile Include="Reporting\ReportSection.cs" />
     <Compile Include="Scraping\ActionType.cs" />
