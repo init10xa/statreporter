@@ -40,7 +40,7 @@ namespace StatReporter
             scraper.ProgressChanged += OnProgressChanged;
             var messages = scraper.Scrape();
 
-            IReportGenerator rg = new AllContributionsByMonthReport(messages);
+            IReportGenerator rg = new AllContributionsByHourReport(messages);
             var report = rg.GenerateAsync().Result;
 
             foreach (var section in report.Sections)

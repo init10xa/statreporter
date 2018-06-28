@@ -21,7 +21,6 @@ namespace StatReporter.Reporting
 
         protected override ReportSection CreateMainSection()
         {
-            reportContent = new List<string[]>();
             string date;
 
             foreach (var record in contrinutions)

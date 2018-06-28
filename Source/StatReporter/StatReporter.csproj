@@ -66,6 +66,7 @@
     <Compile Include="Reporting\AllContributionsByHourReport.cs" />
     <Compile Include="Reporting\AllContributionsByMonthReport.cs" />
     <Compile Include="Reporting\ContributionsBase.cs" />
+    <Compile Include="Reporting\ContributionsByHourBase.cs" />
     <Compile Include="Reporting\ContributionsByMonthBase.cs" />
     <Compile Include="Reporting\Formatter\DelimiterType.cs" />
     <Compile Include="Reporting\ReportGeneratorBase.cs" />
