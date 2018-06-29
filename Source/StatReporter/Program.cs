@@ -3,6 +3,7 @@ using NLog;
 using StatReporter.Core;
 using StatReporter.Reporting;
 using StatReporter.Scraping;
+using StatReporter.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,6 +21,7 @@ namespace StatReporter
         private static int BlockPercentage;
         private static string EmptyBlockString = "-";
         private static string FullBlockString = "#";
+        private static List<IProgressable> Progressables;
 
         public static void Main(string[] args)
         {
@@ -33,12 +35,10 @@ namespace StatReporter
 
             HtmlDocument[] htmlDocs = CreateDocuments(args);
 
-            var logger = LogManager.GetLogger(typeof(HtmlScraper).FullName);
-            HtmlScraper scraper = new HtmlScraper(logger, htmlDocs[0]);
-            scraper.ProgressChanged += OnProgressChanged;
-            var messages = scraper.Scrape();
+            Progressables = new List<IProgressable>();
+            var messages = GetMessages(htmlDocs);
 
-            IReportGenerator rg = new AllContributionsByMonthReport(messages);
+            IReportGenerator rg = new AllContributionsByMonthReport(messages[0]);
             var report = rg.GenerateAsync().Result;
 
             foreach (var section in report.Sections)
@@ -88,6 +88,42 @@ namespace StatReporter
             return htmlDocs;
         }
 
+        private static MessageMetaData[][] GetMessages(HtmlDocument[] htmlDocs)
+        {
+            var tasksList = new List<Task<MessageMetaData[]>>();
+            var logger = LogManager.GetLogger(typeof(HtmlScraper).FullName);
+            Task<MessageMetaData[]> task;
+
+            foreach (var doc in htmlDocs)
+            {
+                task = GetMessagesAsync(doc, logger);
+                tasksList.Add(task);
+            }
+
+            var result = Task.WhenAll(tasksList).Result;
+
+            return result;
+        }
+
+        private static MessageMetaData[] GetMessages(object state)
+        {
+            var args = state as Tuple<HtmlDocument, Logger>;
+            var htmlDoc = args.Item1;
+            var logger = args.Item2;
+
+            HtmlScraper scraper = new HtmlScraper(logger, htmlDoc);
+            SubscribeForChange(scraper);
+            var messages = scraper.Scrape();
+
+            return messages;
+        }
+
+        private static async Task<MessageMetaData[]> GetMessagesAsync(HtmlDocument htmlDoc, Logger logger)
+        {
+            var state = new Tuple<HtmlDocument, Logger>(htmlDoc, logger);
+            return await Task.Factory.StartNew(GetMessages, state);
+        }
+
         private static void OnProgressChanged(object sender, ProgressEventArgs e)
         {
             ShowProgress(e.Progress, e.Message);
@@ -113,6 +149,12 @@ namespace StatReporter
                 Console.Write(EmptyBlockString);
 
             Console.WriteLine("]");
+        }
+
+        private static void SubscribeForChange(IProgressable subject)
+        {
+            subject.ProgressChanged += OnProgressChanged;
+            Progressables.Add(subject);
         }
 
         private static bool VerfiyArguments(string[] args)
