@@ -6,12 +6,15 @@ using StatReporter.Scraping;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace StatReporter
 {
     internal class Program
     {
+        private static readonly string HtmlFileNamePattern = @"^[\w\-. \[\]]+.html$";
         private static readonly int NumberOfTotalBlocks = 20;
         private static int BlockPercentage;
         private static string EmptyBlockString = "-";
@@ -19,12 +22,8 @@ namespace StatReporter
 
         private static void Main(string[] args)
         {
-            Debug.Assert(args.Length > 0, "args.Length > 0 - at least one argument should be passed to the program.");
-            if (args.Length == 0)
-            {
-                Console.WriteLine("File path should be provided to the program.");
+            if (!VerfiyArguments(args))
                 return;
-            }
 
             BlockPercentage = 100 / NumberOfTotalBlocks;
 
@@ -40,7 +39,7 @@ namespace StatReporter
             scraper.ProgressChanged += OnProgressChanged;
             var messages = scraper.Scrape();
 
-            IReportGenerator rg = new UserContributionByHourReport(messages, "TestUser");
+            IReportGenerator rg = new AllContributionsByMonthReport(messages);
             var report = rg.GenerateAsync().Result;
 
             foreach (var section in report.Sections)
@@ -82,6 +81,42 @@ namespace StatReporter
                 Console.Write(EmptyBlockString);
 
             Console.WriteLine("]");
+        }
+
+        private static bool VerfiyArguments(string[] args)
+        {
+            Debug.Assert(args.Length > 0, "args.Length > 0 - at least one argument should be passed to the program.");
+            if (args.Length == 0)
+            {
+                Console.WriteLine("File path should be provided to the program.");
+                return false;
+            }
+
+            if (!VerifyHtmlFiles(args))
+                return false;
+
+            return true;
+        }
+
+        private static bool VerifyHtmlFiles(string[] filePaths)
+        {
+            bool doesMatch;
+            string fileName;
+
+            foreach (var path in filePaths)
+            {
+                fileName = Path.GetFileName(path);
+                doesMatch = Regex.IsMatch(fileName, HtmlFileNamePattern);
+
+                Debug.Assert(doesMatch, $"doesMath - file '{fileName}'is a not a valid HTML.");
+                if (!doesMatch)
+                {
+                    Console.WriteLine($"file '{fileName}'is a not a valid HTML.");
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
