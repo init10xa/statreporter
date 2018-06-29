@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace StatReporter
 {
@@ -20,7 +21,7 @@ namespace StatReporter
         private static string EmptyBlockString = "-";
         private static string FullBlockString = "#";
 
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             if (!VerfiyArguments(args))
                 return;
@@ -30,12 +31,10 @@ namespace StatReporter
             Console.OutputEncoding = Encoding.UTF8;
             Console.CursorVisible = false;
 
-            string fileName = args[0];
-            HtmlDocument htmlDoc = new HtmlDocument();
-            htmlDoc.Load(fileName);
+            HtmlDocument[] htmlDocs = CreateDocuments(args);
 
             var logger = LogManager.GetLogger(typeof(HtmlScraper).FullName);
-            HtmlScraper scraper = new HtmlScraper(logger, htmlDoc);
+            HtmlScraper scraper = new HtmlScraper(logger, htmlDocs[0]);
             scraper.ProgressChanged += OnProgressChanged;
             var messages = scraper.Scrape();
 
@@ -54,6 +53,39 @@ namespace StatReporter
             Console.Write("Done!");
             Console.CursorVisible = true;
             Console.ReadKey();
+        }
+
+        private static HtmlDocument CreateDocument(object obj)
+        {
+            string filePath = obj as string;
+            string fileName = Path.GetFileName(filePath);
+
+            Console.WriteLine($"Loading file:\t{fileName}");
+
+            HtmlDocument htmlDoc = new HtmlDocument();
+            htmlDoc.Load(filePath);
+
+            return htmlDoc;
+        }
+
+        private static async Task<HtmlDocument> CreateDocumentAsync(string fileName)
+        {
+            return await Task.Factory.StartNew(CreateDocument, fileName);
+        }
+
+        private static HtmlDocument[] CreateDocuments(string[] args)
+        {
+            var tasksList = new List<Task<HtmlDocument>>();
+
+            foreach (string htmlFileName in args)
+            {
+                var task = CreateDocumentAsync(htmlFileName);
+                tasksList.Add(task);
+            }
+
+            var htmlDocs = Task.WhenAll(tasksList).Result;
+
+            return htmlDocs;
         }
 
         private static void OnProgressChanged(object sender, ProgressEventArgs e)
