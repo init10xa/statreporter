@@ -22,6 +22,9 @@ namespace StatReporter.Scraping
                 case "messageActionPinMessage":
                     return ActionType.PinnedMessage;
 
+                case "messageActionChannelMigrateFrom":
+                    return ActionType.UpgradedToSupergroup;
+
                 case "messageActionChatMigrateTo":
                     return ActionType.UpgradedToSupergroup;
 
