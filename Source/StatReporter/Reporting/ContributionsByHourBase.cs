@@ -12,9 +12,9 @@ namespace StatReporter.Reporting
             // do nothing!
         }
 
-        protected override string CreateKey(DateTime date)
+        protected override DateTime CreateKey(DateTime date)
         {
-            return date.ToString("HH", CultureInfo.InvariantCulture);
+            return new DateTime(1, 1, 1, date.Hour, 0, 0);
         }
 
         protected override ReportSection CreateMainSection()
@@ -22,7 +22,7 @@ namespace StatReporter.Reporting
             var sortedContributions = contrinutions.OrderBy(item => item.Key);
 
             foreach (var record in sortedContributions)
-                reportContent.Add(new string[] { record.Key, record.Value.ToString() });
+                reportContent.Add(new string[] { record.Key.ToString("HH"), record.Value.ToString() });
 
             var mainSection = new ReportSection()
             {

@@ -12,12 +12,12 @@ namespace StatReporter.Reporting
 
         public ContributionsByMonthBase(MessageMetaData[] messages) : base(messages)
         {
-            contrinutions = new Dictionary<string, int>();
+            // do nothing!
         }
 
-        protected override string CreateKey(DateTime date)
+        protected override DateTime CreateKey(DateTime date)
         {
-            return $"{date.Year}{Delimiter}{date.Month}";
+            return new DateTime(date.Year, date.Month, 1);
         }
 
         protected override ReportSection CreateMainSection()
@@ -41,15 +41,9 @@ namespace StatReporter.Reporting
             return mainSection;
         }
 
-        protected string GetFormattedDate(string key)
+        protected string GetFormattedDate(DateTime date)
         {
-            var dateComponents = key.Split(Delimiter);
-            var year = Convert.ToInt32(dateComponents[0]);
-            var month = Convert.ToInt32(dateComponents[1]);
-            var dummyDate = new DateTime(year, month, 1);
-            var monthName = dummyDate.ToString("MMM.", CultureInfo.InvariantCulture);
-            var formattedDate = $"{monthName} {year}";
-
+            var formattedDate = date.ToString("MMM. yyyy");
             return formattedDate;
         }
     }

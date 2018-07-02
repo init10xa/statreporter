@@ -13,7 +13,7 @@ namespace StatReporter.Reporting
         protected override void CountMessages()
         {
             int messagesCount = messages.Length;
-            string key = null;
+            DateTime key;
             int counter;
 
             for (int i = 0; i < messagesCount; i++)
