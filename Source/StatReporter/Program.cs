@@ -38,7 +38,9 @@ namespace StatReporter
             Progressables = new List<IProgressable>();
             var messages = GetMessages(htmlDocs);
 
-            IReportGenerator rg = new AllContributionsByMonthReport(messages[0]);
+            var mergedMessages = Merge(messages);
+
+            IReportGenerator rg = new AllContributionsByMonthReport(mergedMessages);
             var report = rg.GenerateAsync().Result;
 
             foreach (var section in report.Sections)
@@ -122,6 +124,21 @@ namespace StatReporter
         {
             var state = new Tuple<HtmlDocument, Logger>(htmlDoc, logger);
             return await Task.Factory.StartNew(GetMessages, state);
+        }
+
+        private static MessageMetaData[] Merge(MessageMetaData[][] messages)
+        {
+            var mergedMessages = new HashSet<MessageMetaData>();
+            MessageMetaData[] resultArray;
+
+            for (int i = 0; i < messages.Length; i++)
+                for (int j = 0; j < messages[i].Length; j++)
+                    mergedMessages.Add(messages[i][j]);
+
+            resultArray = new MessageMetaData[mergedMessages.Count];
+            mergedMessages.CopyTo(resultArray, 0);
+
+            return resultArray;
         }
 
         private static void OnProgressChanged(object sender, ProgressEventArgs e)
