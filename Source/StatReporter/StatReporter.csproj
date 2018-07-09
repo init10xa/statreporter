@@ -72,7 +72,7 @@
     <Compile Include="Reporting\Formatter\DelimiterType.cs" />
     <Compile Include="Reporting\IReportManager.cs" />
     <Compile Include="Reporting\ReportGeneratorBase.cs" />
-    <Compile Include="Reporting\ContentType.cs" />
+    <Compile Include="Reporting\Formatter\ContentType.cs" />
     <Compile Include="Reporting\Formatter\CsvFormatter.cs" />
     <Compile Include="Reporting\Formatter\IContentFormatter.cs" />
     <Compile Include="Reporting\IReportGenerator.cs" />

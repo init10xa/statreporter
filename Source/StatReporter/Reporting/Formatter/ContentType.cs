@@ -1,5 +1,5 @@
 ﻿
-namespace StatReporter.Reporting
+namespace StatReporter.Reporting.Formatter
 {
     public enum ContentType
     {
