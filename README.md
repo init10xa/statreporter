@@ -1,2 +1,2 @@
 # statreporter
-A simple Telegram bot that can create a bunch of statistical reports.
+A simple console app that can parse Telegram Web chat and create a bunch of statistical reports.
